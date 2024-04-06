@@ -13,6 +13,24 @@ export default function Carrito() {
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
 
+  const handleCheckout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/create-checkout-session`, {
+        items: cartItems
+      }, {
+        headers: {
+          Authorization: token,
+        },
+      });
+  
+      // Redirige al usuario a la URL de Checkout
+      window.location = response.data.url;
+    } catch (error) {
+      console.error('Error al iniciar la sesión de pago:', error);
+    }
+  };
+
 
   const handleEditAddress = () => {
     navigate('/edit-address-form');
@@ -220,6 +238,8 @@ export default function Carrito() {
             <div className="mt-6">
               <button
                 type="submit"
+                onClick={handleCheckout}
+
                 className="w-full rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-50"
               >
                 Proceder al pago
@@ -249,6 +269,7 @@ export default function Carrito() {
                   <p>No se ha agregado una dirección de envío.</p>
                   <button
                     type="button"
+                    
                     className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-500"
                     onClick={handleAddAddress}
                   >
