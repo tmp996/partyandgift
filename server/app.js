@@ -5,6 +5,8 @@ const bcrypt = require('bcrypt');
 const db = require('./utils/database');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')('sk_test_51P0kZtL1xMfPwf6dWCmv8wAoaHc4o01CBOAMWhBz1rm4vk4NDLoJN0Zpf6wGRgRB1LPREQ61OEdA9LoiUkZhf3MR00VJ4sno7M'); // Usa tu Stripe Secret Key real
+
 
 // Crear una instancia de Express
 const app = express();
@@ -393,6 +395,81 @@ app.put('/edit_address', verifyToken, async (req, res) => {
     res.status(500).send('Error interno del servidor');
   }
 });
+
+
+//Stripe conf
+// Middleware para manejar webhooks de Stripe
+app.post('/webhook', express.raw({type: 'application/json'}), (request, response) => {
+  const sig = request.headers['stripe-signature'];
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_XquGICRPYB09OdgXbSNZP04tUP1YQdSV'); // Usa tu Stripe Webhook Secret real
+  } catch (err) {
+    return response.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Manejar los eventos de webhook
+  switch (event.type) {
+    case 'checkout.session.async_payment_failed':
+      // Manejar el evento
+      break;
+    case 'checkout.session.async_payment_succeeded':
+      // Manejar el evento
+      break;
+    case 'checkout.session.completed':
+      // Manejar el evento
+      break;
+    case 'checkout.session.expired':
+      // Manejar el evento
+      break;
+    // Agregar más casos para otros eventos si es necesario
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  // Devolver una respuesta 200 para confirmar la recepción del evento
+  response.send();
+});
+
+// Importar Stripe
+
+app.post('/create-checkout-session', async (req, res) => {
+  const { items } = req.body; // Asegúrate de pasar los elementos del carrito desde el cliente
+
+  try {
+    // Mapea tu carrito de productos a la estructura de línea requerida por Stripe
+    const lineItems = items.map((item) => {
+      return {
+        price_data: {
+          currency: 'usd', // Asegúrate de usar la moneda correcta
+          product_data: {
+            name: item.name,
+            images: [item.image_url],
+          },
+          unit_amount: item.price * 100, // Stripe espera el precio en centavos
+        },
+        quantity: item.quantity,
+      };
+    });
+
+    // Crea una sesión de Checkout
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`, // Ruta de éxito en tu aplicación
+      cancel_url: `${req.headers.origin}/cancel`, // Ruta de cancelación en tu aplicación
+    });
+
+    // Responde con la URL de la sesión
+    res.json({ url: session.url });
+  } catch (e) {
+    res.status(400).json({ error: { message: e.message } });
+  }
+});
+
 
 app.listen(3001, async () => {
   console.log('Server is running on port 3001');
