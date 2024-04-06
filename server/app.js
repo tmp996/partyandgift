@@ -405,7 +405,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), (request, response
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_XquGICRPYB09OdgXbSNZP04tUP1YQdSV'); // Usa tu Stripe Webhook Secret real
+    event = stripe.webhooks.constructEvent(request.body, sig, 'whsec_iNFPAsfSpBqaM3C89qDz2jhYj7PlECAg'); // Usa tu Stripe Webhook Secret real
   } catch (err) {
     return response.status(400).send(`Webhook Error: ${err.message}`);
   }
