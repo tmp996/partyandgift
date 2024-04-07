@@ -5,6 +5,8 @@ const bcrypt = require('bcrypt');
 const db = require('./utils/database');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')('sk_test_51P0kZtL1xMfPwf6dWCmv8wAoaHc4o01CBOAMWhBz1rm4vk4NDLoJN0Zpf6wGRgRB1LPREQ61OEdA9LoiUkZhf3MR00VJ4sno7M');
+
 
 // Crear una instancia de Express
 const app = express();
@@ -393,6 +395,41 @@ app.put('/edit_address', verifyToken, async (req, res) => {
     res.status(500).send('Error interno del servidor');
   }
 });
+
+// Endpoint para crear la sesión de Checkout en Stripe
+app.post('/create-checkout-session', async (req, res) => {
+  const { items } = req.body; // items debe ser un array de objetos con id y quantity
+
+  try {
+    const lineItems = items.map(async item => {
+      const product = await db.obtenerProductoPorId(item.id); // Asume que esta función devuelve los detalles del producto
+      return {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: product.name,
+          },
+          unit_amount: product.price * 100, // El precio debe estar en centavos
+        },
+        quantity: item.quantity,
+      };
+    });
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${YOUR_DOMAIN}/success`,
+      cancel_url: `${YOUR_DOMAIN}/cancel`,
+    });
+
+    res.json({ id: session.id });
+  } catch (error) {
+    console.error('Error al crear la sesión de Checkout:', error);
+    res.status(500).send('Error interno del servidor');
+  }
+});
+
 
 app.listen(3001, async () => {
   console.log('Server is running on port 3001');
