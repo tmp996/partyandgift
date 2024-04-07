@@ -45,6 +45,10 @@ import UnAuthorized from './UnAuthorized';
 import EditAddressForm from './EditAddressForm';
 import Ubicacion from './Ubicacion';
 import Descuentos from './Descuentos';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+
+const stripePromise = loadStripe('pk_test_51P0kZtL1xMfPwf6dxkOetgaYCWY2SNh3c3G9qY5KchoDmy5GtnCmqsWjNPVakxccJfPdM6O9yFSu5ZmQSBDnVTkx00ME56T6Ew');
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -62,6 +66,8 @@ function App() {
   };
 
   return (
+    <Elements stripe={stripePromise}>
+
     <Router>
       <div>
         <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
@@ -122,6 +128,8 @@ function App() {
         <Footer />
       </div>
     </Router>
+    </Elements>
+
   );
 }
 
