@@ -396,28 +396,16 @@ app.put('/edit_address', verifyToken, async (req, res) => {
   }
 });
 
+const YOUR_DOMAIN = 'http://localhost:5173'; // Reemplaza con la URL de tu aplicación
+
 // Endpoint para crear la sesión de Checkout en Stripe
 app.post('/create-checkout-session', async (req, res) => {
-  const { items } = req.body; // items debe ser un array de objetos con id y quantity
+  const { line_items } = req.body;
 
   try {
-    const lineItems = items.map(async item => {
-      const product = await db.obtenerProductoPorId(item.id); // Asume que esta función devuelve los detalles del producto
-      return {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: product.name,
-          },
-          unit_amount: product.price * 100, // El precio debe estar en centavos
-        },
-        quantity: item.quantity,
-      };
-    });
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: lineItems,
+      line_items,
       mode: 'payment',
       success_url: `${YOUR_DOMAIN}/success`,
       cancel_url: `${YOUR_DOMAIN}/cancel`,
@@ -429,6 +417,8 @@ app.post('/create-checkout-session', async (req, res) => {
     res.status(500).send('Error interno del servidor');
   }
 });
+
+
 
 
 app.listen(3001, async () => {

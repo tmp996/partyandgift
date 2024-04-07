@@ -20,19 +20,28 @@ export default function Carrito() {
   const navigate = useNavigate();
 
   const handleCheckout = async () => {
-    const items = cartItems.map(item => ({
-      id: item.product_id,
+    const line_items = cartItems.map(item => ({
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: item.price * 100, // El precio debe estar en centavos
+      },
       quantity: item.quantity,
     }));
-
-    // Llama al endpoint para crear una sesión de Checkout
-    const response = await axios.post('/create-checkout-session', { items });
-    const sessionId = response.data.id;
-
-    // Redirige al usuario a la pantalla de Checkout de Stripe
-    const stripe = await stripePromise;
-    stripe.redirectToCheckout({ sessionId });
+  
+    try {
+      const response = await axios.post('http://localhost:3001/create-checkout-session', { line_items });
+      const sessionId = response.data.id;
+      const stripe = await stripePromise;
+      stripe.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error('Error al crear la sesión de Checkout:', error);
+    }
   };
+  
+  
 
   const handlePaymentSuccess = (paymentMethodId) => {
     // Aquí puedes realizar acciones adicionales después de un pago exitoso
