@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { QuestionMarkCircleIcon, XMarkIcon as XMarkIconMini } from '@heroicons/react/20/solid'
 import axios from 'axios'
 import CheckoutForm from './CheckoutForm';
+import { loadStripe } from '@stripe/stripe-js'; // Asegúrate de importar loadStripe
+
+
+const stripePromise = loadStripe('pk_test_51P0kZtL1xMfPwf6dxkOetgaYCWY2SNh3c3G9qY5KchoDmy5GtnCmqsWjNPVakxccJfPdM6O9yFSu5ZmQSBDnVTkx00ME56T6Ew');
+
 
 
 
@@ -13,6 +18,21 @@ export default function Carrito() {
   const [showHeader, setShowHeader] = useState(true);
   const [cartItems, setCartItems] = useState([]);
   const navigate = useNavigate();
+
+  const handleCheckout = async () => {
+    const items = cartItems.map(item => ({
+      id: item.product_id,
+      quantity: item.quantity,
+    }));
+
+    // Llama al endpoint para crear una sesión de Checkout
+    const response = await axios.post('/create-checkout-session', { items });
+    const sessionId = response.data.id;
+
+    // Redirige al usuario a la pantalla de Checkout de Stripe
+    const stripe = await stripePromise;
+    stripe.redirectToCheckout({ sessionId });
+  };
 
   const handlePaymentSuccess = (paymentMethodId) => {
     // Aquí puedes realizar acciones adicionales después de un pago exitoso
@@ -224,8 +244,10 @@ export default function Carrito() {
 
 
             <div className="mt-6">
-  <CheckoutForm total={calculateTotals().total} onSuccess={handlePaymentSuccess} />
-</div>
+              <button type="button" role="link" onClick={handleCheckout}>
+                Proceder al pago
+              </button>
+            </div>
 
 
             <section className="mt-8">
